@@ -1,10 +1,19 @@
 export interface LogEntry {
-  level: "debug" | "info" | "warn" | "error";
-  message: string;
-  meta?: any; // Optional metadata (e.g., { userId: 123 })
+  LEVEL: "debug" | "info" | "warn" | "error";
+  MESSAGE: string;
+  META?: any; // Optional metadata (e.g., { userId: 123 })
   "[DEBUG]"?: any; // used just to replace level in debug mode (for better visibility)
   isDebugMode?: boolean; // Optional debug mode flag
   timestamp: Date;
+}
+
+export interface DebugOptions {
+  debugUI?: boolean; // Enable WebSocket transport for real-time viewing
+  wsMode?: "server" | "client";
+  wsPort?: number; // WebSocket port (default: 3001)
+  wsUrl?: string; // For client mode only (e.g., 'wss://example.com/logs')
+  password?: string; // Optional password for WebSocket connections
+  reconnectInterval?: number;
 }
 
 const LEVELS = {
@@ -18,29 +27,50 @@ export type Transport = (entry: LogEntry) => void | Promise<void>;
 
 export class DebugIt {
   private transports: Transport[] = [];
+  private minLevel: LogEntry["LEVEL"] = "debug";
   private debugMode: boolean = false;
-  private minLevel: LogEntry["level"] = "debug";
 
   constructor(
     transports: Transport[] = [],
+    minLevel: LogEntry["LEVEL"] = "debug",
     debugMode: boolean = false,
-    minLevel: LogEntry["level"] = "debug"
+    debugOptions: DebugOptions = {}
   ) {
     this.transports = transports;
     this.debugMode = debugMode;
     this.minLevel = minLevel;
+
+    if (this.debugMode && debugOptions.debugUI) {
+      const {
+        wsPort = 3001,
+        wsMode = "server",
+        wsUrl = "",
+        password,
+        reconnectInterval,
+      } = debugOptions;
+
+      this.addTransport(
+        websocketTransport({
+          mode: wsMode,
+          port: wsPort,
+          url: wsUrl,
+          password,
+          reconnectInterval,
+        })
+      );
+    }
   }
 
   addTransport(transport: Transport): void {
     this.transports.push(transport);
   }
 
-  private log(level: LogEntry["level"], message?: string, meta?: any): void {
+  private log(level: LogEntry["LEVEL"], message?: string, meta?: any): void {
     if (LEVELS[level] < LEVELS[this.minLevel]) return;
     const entry: LogEntry = {
-      level,
-      message: message ?? "",
-      meta,
+      LEVEL: level,
+      MESSAGE: message ?? "",
+      META: meta,
       timestamp: new Date(),
       isDebugMode: this.debugMode,
     };
@@ -69,60 +99,8 @@ export class DebugIt {
   }
 }
 
-// Example built-in transport: Console output (optimized with JSON.stringify for speed)
-export const consoleTransport: Transport = (entry) => {
-  const { level, message, meta, timestamp, isDebugMode } = entry;
-  const header = `[${level.toUpperCase()}]-(${timestamp.toISOString()})`;
-  const debugHeader = `(${timestamp.toISOString()})===>`;
-  const output = JSON.stringify({
-    ...(isDebugMode ? { "[DEBUG]": debugHeader } : { level: header }),
-    message,
-    ...(meta ? { meta } : {}),
-  });
-  console.log(output);
-};
+import { consoleTransport } from "./transports/console";
+import { fileTransport } from "./transports/file";
+import { websocketTransport } from "./transports/websocket";
 
-import { promises as fs } from "fs";
-import * as path from "path";
-
-export interface FileTransportOptions {
-  filePath: string; // e.g., './logs/app.log'
-  maxSize?: number; // Optional: Rotate file if it exceeds this size in bytes (default: no limit)
-}
-
-export const fileTransport = (options: FileTransportOptions): Transport => {
-  const { filePath, maxSize = Infinity } = options;
-  const dir = path.dirname(filePath);
-
-  // Ensure log directory exists (one-time async op, non-blocking)
-  fs.mkdir(dir, { recursive: true }).catch((err) =>
-    console.error("Failed to create log dir:", err)
-  );
-
-  return async (entry: LogEntry) => {
-    const header = `[${entry.level.toUpperCase()}]-(${entry.timestamp.toISOString()})`;
-    const debugHeader = `(${entry.timestamp.toISOString()})===>`;
-    const output =
-      JSON.stringify({
-        ...(entry.isDebugMode ? { "[DEBUG]": debugHeader } : { level: header }),
-        message: entry.message,
-        ...(entry.meta ? { meta: entry.meta } : {}),
-      }) + "\n"; // Newline for easy file parsing
-
-    try {
-      // Check file size and rotate if needed (simple: rename to .old)
-      const stats = await fs.stat(filePath);
-      if (stats.size > maxSize) {
-        await fs.rename(filePath, `${filePath}.old`);
-      }
-    } catch (err) {
-      // Ignore if file doesn't exist yet
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        console.error("File transport error:", err);
-      }
-    }
-
-    // Append to file asynchronously
-    await fs.appendFile(filePath, output);
-  };
-};
+export { consoleTransport, fileTransport, websocketTransport };
