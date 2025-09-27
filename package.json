@@ -1,0 +1,29 @@
+{
+  "name": "debug_it",
+  "version": "0.1.0",
+  "description": "An optimized, composable logging library for Node.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "keywords": [
+    "logger",
+    "debug",
+    "logging",
+    "optimized"
+  ],
+  "author": "Ocb Chung",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.17",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.4",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}
