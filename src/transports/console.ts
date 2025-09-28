@@ -11,12 +11,12 @@ export const consoleTransport: Transport = (entry) => {
     MESSAGE: sourcePrefix + MESSAGE + " ---> ",
     ...(META ? { META } : {}),
   });
-  
+
   try {
     console.log(output);
   } catch (error: any) {
     // Handle broken pipe errors gracefully
-    if (error.code === 'EPIPE') {
+    if (error.code === "EPIPE") {
       // Silently ignore broken pipe errors
       return;
     }

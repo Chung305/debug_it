@@ -13,17 +13,16 @@ import { fileTransport } from "./src/transports/file";
 
 // SERVER Example (start a local WebSocket server)
 const logger = new DebugIt(
-  [
-    consoleTransport,
-    // fileTransport({ filePath: "./logs/app.log", maxSize: 1024 * 1024 }),
-  ],
-  "info", // Set minimum log level to "info"
-  true, // Enable/Disable debug mode
-  { debugUI: true, wsPort: 3001, password: "secret" } // Enable WebSocket transport
+  [consoleTransport],
+  { minLevel: "info", debugMode: true },
+  { wsPort: 3001, password: "secret" } // Enable WebSocket transport
 );
-
+// fileTransport({ filePath: "./logs/app.log", maxSize: 1024 * 1024 }),
 // SERVER Example (start a local WebSocket server)
-const simpleLogger = new DebugIt([consoleTransport], "info", false);
+const simpleLogger = new DebugIt([consoleTransport], {
+  minLevel: "info",
+  debugMode: false,
+});
 simpleLogger.info("Simple logger, console only", { simple: true });
 
 // logger.info("Hello, world!", { foo: "bar" });

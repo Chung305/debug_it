@@ -1,4 +1,4 @@
-import { LogEntry, DebugOptions, Transport } from "./lib/types";
+import { LogEntry, DebugOptions, Transport, Settings } from "./lib/types";
 import { LEVELS } from "./lib/constants";
 import { getCallerInfo } from "./lib/util";
 import { websocketTransport } from "./transports";
@@ -10,20 +10,19 @@ export class DebugIt {
 
   constructor(
     transports: Transport[] = [],
-    minLevel: LogEntry["LEVEL"] = "debug",
-    debugMode: boolean = false,
+    settings: Settings = { minLevel: "debug", debugMode: false },
     debugOptions: DebugOptions = {}
   ) {
     this.transports = transports;
-    this.debugMode = debugMode;
-    this.minLevel = minLevel;
+    this.minLevel = settings.minLevel;
+    this.debugMode = settings.debugMode;
 
-    if (this.debugMode && debugOptions.debugUI) {
+    if (this.debugMode) {
       const {
-        wsPort = 3001,
         wsMode = "server",
-        wsUrl = "",
+        wsPort = 3001,
         password,
+        wsUrl = "",
         reconnectInterval,
       } = debugOptions;
 
