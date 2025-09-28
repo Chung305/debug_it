@@ -3,23 +3,28 @@ import { consoleTransport } from "./src/transports/console";
 import { fileTransport } from "./src/transports/file";
 
 // CLIENT Example (connect to a hosted WebSocket server)
-const hostLogger = new DebugIt([], "debug", false, {
-  wsMode: "client",
-  wsUrl: "wss://your-hosted-ws.com/logs",
-  password: "secret",
-  reconnectInterval: 10000,
-});
-hostLogger.info("Sent to hosted WS");
+// const hostLogger = new DebugIt([], "debug", false, {
+//   wsMode: "client",
+//   wsUrl: "wss://your-hosted-ws.com/logs",
+//   password: "secret",
+//   reconnectInterval: 10000,
+// });
+// hostLogger.info("Sent to hosted WS");
 
+// SERVER Example (start a local WebSocket server)
 const logger = new DebugIt(
   [
     consoleTransport,
-    fileTransport({ filePath: "./logs/app.log", maxSize: 1024 * 1024 }),
+    // fileTransport({ filePath: "./logs/app.log", maxSize: 1024 * 1024 }),
   ],
   "info", // Set minimum log level to "info"
   true, // Enable/Disable debug mode
   { debugUI: true, wsPort: 3001, password: "secret" } // Enable WebSocket transport
 );
+
+// SERVER Example (start a local WebSocket server)
+const simpleLogger = new DebugIt([consoleTransport], "info", false);
+simpleLogger.info("Simple logger, console only", { simple: true });
 
 // logger.info("Hello, world!", { foo: "bar" });
 // logger.error("Something went wrong", { errorCode: 500 });
@@ -29,5 +34,5 @@ const logger = new DebugIt(
 logger.info("Hello from WebSocket!", { foo: "bar" });
 // Keep the process running to test (e.g., add setInterval or wait)
 setInterval(() => {
-  logger.info("Periodic log", { count: Math.random() });
+  logger.info("Yoo FEDE, Txt me if you see this!", { count: Math.random() });
 }, 2000);

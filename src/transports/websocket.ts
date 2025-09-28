@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { Transport, LogEntry } from "../index"; // Adjust if needed for circular imports
+import { Transport, LogEntry } from "../lib/types";
 import { getLogHeader } from "../lib/util";
 
 export interface WebSocketTransportOptions {
@@ -60,6 +60,7 @@ export const websocketTransport = (
       );
       const output = JSON.stringify({
         ...(entry.isDebugMode ? { "[DEBUG]": header } : { LEVEL: header }),
+        LEVEL: entry.LEVEL,
         MESSAGE: entry.MESSAGE,
         ...(entry.META ? { META: entry.META } : {}),
       });

@@ -1,4 +1,4 @@
-import { LogEntry, Transport } from "..";
+import { Transport, LogEntry } from "../lib/types";
 import { getLogHeader } from "../lib/util";
 import * as fs from "fs/promises";
 import * as path from "path";
