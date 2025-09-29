@@ -7,10 +7,10 @@
 export { DebugIt } from "./debugit";
 
 // Types
-export type { LogEntry, DebugOptions, Transport } from "./lib/types";
+export type { LogEntry, DebugOptions, Transport } from "./utils/types";
 
 // Constants
-export { LEVELS } from "./lib/constants";
+export { LEVELS } from "./utils/constants";
 
 // Transport
 export {

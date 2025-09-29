@@ -1,6 +1,6 @@
-import { LogEntry, DebugOptions, Transport, Settings } from "./lib/types";
-import { LEVELS } from "./lib/constants";
-import { getCallerInfo } from "./lib/util";
+import { LogEntry, DebugOptions, Transport, Settings } from "./utils/types";
+import { LEVELS } from "./utils/constants";
+import { getCallerInfo } from "./utils/util";
 import { websocketTransport } from "./transports";
 
 export class DebugIt {

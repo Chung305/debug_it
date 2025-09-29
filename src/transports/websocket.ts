@@ -1,6 +1,6 @@
 import WebSocket from "ws";
-import { Transport, LogEntry } from "../lib/types";
-import { getLogHeader } from "../lib/util";
+import { Transport, LogEntry } from "../utils/types";
+import { getLogHeader } from "../utils/util";
 
 export interface WebSocketTransportOptions {
   mode?: "server" | "client"; // Default: 'server'
