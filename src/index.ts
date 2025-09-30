@@ -12,7 +12,7 @@ export type { LogEntry, DebugOptions, Transport } from "./utils/types";
 // Constants
 export { LEVELS } from "./utils/constants";
 
-// Transport
+// Transports
 export {
   consoleTransport,
   fileTransport,
