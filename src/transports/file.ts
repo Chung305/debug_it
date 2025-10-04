@@ -1,5 +1,5 @@
-import { Transport, LogEntry } from "../utils/types";
-import { getLogHeader } from "../utils/util";
+import { Transport, LogEntry } from "../lib/types";
+import { getLogHeader } from "../lib/utils";
 import * as fs from "fs/promises";
 import * as path from "path";
 

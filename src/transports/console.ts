@@ -1,5 +1,5 @@
-import { Transport } from "../utils/types";
-import { getLogHeader } from "../utils/util";
+import { Transport } from "../lib/types";
+import { getLogHeader } from "../lib/utils";
 
 export const consoleTransport: Transport = (entry) => {
   const { LEVEL, MESSAGE, META, timestamp, isDebugMode, source } = entry;
