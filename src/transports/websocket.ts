@@ -3,13 +3,16 @@ import { Transport, LogEntry } from "../utils/types";
 import { getLogHeader } from "../utils/util";
 
 export interface WebSocketTransportOptions {
-  mode?: "server" | "client"; // Default: 'server'
-  port?: number; // For server mode only (default: 3001)
-  url?: string; // For client mode only (e.g., 'wss://example.com/logs')
-  password?: string; // Auth (query 'pw' for simplicity)
-  headers?: Record<string, string>; // Optional custom headers for client
-  reconnectInterval?: number; // Ms between retries (default: 5000)
+  mode?: "server" | "client";
+  port?: number;
+  url?: string;
+  password?: string;
+  headers?: Record<string, string>;
+  reconnectInterval?: number;
 }
+
+let wssInstance: WebSocket.Server | null = null;
+let wssPort: number | null = null;
 
 export const websocketTransport = (
   options: WebSocketTransportOptions = {}
@@ -26,18 +29,20 @@ export const websocketTransport = (
   if (mode === "client" && !url) {
     throw new Error("URL required for client mode");
   }
-  let wsClient: WebSocket | null = null; // For client mode
-  let wss: WebSocket.Server | null = null; // For server mode
 
-  // Server Mode (existing logic)
+  // Server Mode
   if (mode === "server") {
-    wss = new WebSocket.Server({ port, host: "localhost" });
+    if (wssInstance) {
+      throw new Error(`WebSocket server already running on port ${wssPort}`);
+    }
+    wssInstance = new WebSocket.Server({ port, host: "localhost" });
+    wssPort = port;
 
-    wss.on("listening", () =>
+    wssInstance.on("listening", () =>
       console.log(`DebugIt WS server on ws://localhost:${port}`)
     );
-    wss.on("error", (err) => console.error("WS server error:", err));
-    wss.on("connection", (ws, req) => {
+    wssInstance.on("error", (err) => console.error("WS server error:", err));
+    wssInstance.on("connection", (ws, req) => {
       const urlParams = new URLSearchParams(req.url?.slice(1));
       if (password && urlParams.get("password") !== password) {
         ws.close(1008, "Invalid password");
@@ -47,7 +52,7 @@ export const websocketTransport = (
     });
 
     const broadcast = (data: string) => {
-      wss?.clients.forEach((client) => {
+      wssInstance?.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) client.send(data);
       });
     };
@@ -68,9 +73,10 @@ export const websocketTransport = (
     };
   }
 
-  // Client Mode (new: connect to hosted URL and send logs)
+  // Client Mode (unchanged)
   if (mode === "client") {
     let reconnectTimeout: NodeJS.Timeout | null = null;
+    let wsClient: WebSocket | null = null;
 
     const connect = () => {
       let fullUrl = url!;
@@ -96,17 +102,15 @@ export const websocketTransport = (
       );
     };
 
-    connect(); // Initial connection
+    connect();
 
     return (entry: LogEntry) => {
       if (wsClient?.readyState !== WebSocket.OPEN) return;
-
       const header = getLogHeader(
         entry.LEVEL,
         entry.timestamp,
         entry.isDebugMode || false
       );
-
       const output = JSON.stringify({
         ...(entry.isDebugMode ? { "[DEBUG]": header } : { LEVEL: header }),
         MESSAGE: entry.MESSAGE,
@@ -115,12 +119,16 @@ export const websocketTransport = (
       wsClient.send(output);
     };
   }
+
   throw new Error("Invalid mode");
 };
 
-// Optional: Export a close function for shutdown
-export function closeWebSocketServer(port: number = 3001) {
-  // Logic to close if needed; for now, placeholder
-  console.log(`Closing WebSocket on port ${port}`);
-  // Actual close: Would need to track the server instance
+export function closeWebSocketServer(): void {
+  if (wssInstance && wssPort) {
+    wssInstance.close(() => {
+      console.log(`Closed WebSocket server on port ${wssPort}`);
+      wssInstance = null;
+      wssPort = null;
+    });
+  }
 }

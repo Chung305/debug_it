@@ -3,7 +3,6 @@
  * A flexible logging library with multiple transports and real-time WebSocket support.
  */
 
-// Main
 export { DebugIt } from "./debugit";
 
 // Types

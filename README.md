@@ -1,177 +1,107 @@
-# DebugIt 🚀
+# debug_it
 
-An optimized, composable logging library for Node.js with TypeScript support.
+Lightweight Node.js logger with WebSocket transport for custom real-time UIs.
 
-## ✨ Features
+`debug_it` is a fast, composable logging library with console, file, and WebSocket transports. Build your own live log dashboards by connecting to its WebSocket server or send logs to a remote endpoint.
 
-- **Composable Architecture**: Mix and match different transport methods
-- **TypeScript Support**: Full type safety and IntelliSense support
-- **Debug Mode**: Enhanced visual output for development
-- **File Rotation**: Automatic log file rotation based on size
-- **Async Optimized**: Non-blocking transport execution
-- **Minimal Dependencies**: Lightweight and fast
+[![npm](https://img.shields.io/npm/v/debug_it)](https://www.npmjs.com/package/debug_it) [![License](https://img.shields.io/npm/l/debug_it)](https://grok.com/c/LICENSE)
 
-## 🎯 Debug Mode Comparison
+## Features
 
-### Default Output
+- **Optimized**: Async, non-blocking transports for minimal overhead.
+- **Composable**: Console, file, WebSocket, and custom transports.
+- **WebSocket Support**: Stream logs to a local or remote WebSocket for custom UIs.
+- **Source Tracking**: Auto-captures caller info (file:line).
+- **Lightweight**: <10KB gzipped, single dep (`ws`).
 
-```json
-{
-  "level": "[ERROR]-(2025-09-27T14:09:57.770Z)",
-  "message": "Something went wrong",
-  "meta": {
-    "errorCode": 500
-  }
-}
-```
-
-### Debug Mode Output
-
-```json
-{
-  "[DEBUG]": "(2025-09-27T14:25:33.942Z)===>",
-  "message": "Something went wrong",
-  "meta": {
-    "errorCode": 500
-  }
-}
-```
-
-## 📦 Installation
+## Installation
 
 ```bash
-npm install debug-it
+npm install debug_it
+
 ```
 
-## 🚀 Quick Start
+## Usage
 
-### Basic Usage
+Basic logging:
 
 ```typescript
-import { DebugIt, consoleTransport } from "debug-it";
+const { DebugIt, consoleTransport, fileTransport } = require("debug_it");
 
-const logger = new DebugIt([consoleTransport]);
+const logger = new DebugIt([
+  consoleTransport,
+  fileTransport({ filePath: "logs/app.log" }),
+]);
 
-logger.info("Hello, world!");
-logger.error("Something went wrong", { errorCode: 500 });
+logger.info("Hello!", { user: "Alice" });
 ```
 
-### Advanced Usage with File Transport
+**Output**:
 
-```typescript
-import { DebugIt, consoleTransport, fileTransport } from "debug-it";
+```
+{"LEVEL":"[INFO]-(2025-10-03T22:19:00.000Z)","MESSAGE":"Hello!","source":"[app.js:10:5]","META":{"user":"Alice"}}
 
-const logger = new DebugIt(
-  [
-    consoleTransport,
-    fileTransport({
-      filePath: "./logs/app.log",
-      maxSize: 1024 * 1024, // 1MB
-    }),
-  ],
-  true
-); // Enable debug mode
-
-logger.debug("Debug message");
-logger.info("Info message");
-logger.warn("Warning message");
-logger.error("Error message");
 ```
 
-## 📚 API Reference
+### WebSocket for Custom UI
 
-### Constructor Parameters
-
-```typescript
-new DebugIt(transports?, debugMode?)
-```
-
-| Parameter    | Type          | Default | Description                           |
-| ------------ | ------------- | ------- | ------------------------------------- |
-| `transports` | `Transport[]` | `[]`    | Array of transport functions          |
-| `debugMode`  | `boolean`     | `false` | Enable debug mode for enhanced output |
-
-### Log Levels
-
-| Level   | Priority | Description                        |
-| ------- | -------- | ---------------------------------- |
-| `debug` | 0        | Detailed information for debugging |
-| `info`  | 1        | General information messages       |
-| `warn`  | 2        | Warning messages                   |
-| `error` | 3        | Error messages                     |
-
-### Transport Options
-
-#### Console Transport
-
-```typescript
-import { consoleTransport } from "debug-it";
-```
-
-Outputs formatted JSON logs to the console.
-
-#### File Transport
-
-```typescript
-import { fileTransport } from "debug-it";
-
-const transport = fileTransport({
-  filePath: "./logs/app.log",
-  maxSize: number, // Optional: File size limit in bytes
-});
-```
-
-## 🔧 Configuration Examples
-
-### Development Setup
-
-```typescript
-const logger = new DebugIt([consoleTransport], true);
-```
-
-### Production Setup
+Stream logs to a WebSocket server:
 
 ```typescript
 const logger = new DebugIt(
-  [fileTransport({ filePath: "./logs/app.log" })],
-  false
+  [websocketTransport({ mode: "server", wsPort: 3001, password: "secret" })],
+  { minLevel: "debug", debugMode: true }
 );
+
+logger.debug("Test", { id: 123 });
 ```
 
-### Full-Featured Setup with Debug Options
+Connect a custom UI to `ws://localhost:3001?password=secret`. Sample UI (`ui/sample.html`):
+
+```JS
+<script>
+  const ws = new WebSocket('ws://localhost:3001?password=secret');
+  ws.onmessage = (event) => console.log(JSON.parse(event.data));
+</script>
+
+```
+
+### Remote WebSocket
+
+Send logs to a remote server:
 
 ```typescript
 const logger = new DebugIt(
-  [
-    consoleTransport,
-    fileTransport({ filePath: "./logs/app.log", maxSize: 1024 * 1024 }),
-  ],
-  "info", // Set minimum log level to "info"
-  true, // Enable/Disable debug mode
-  { debugUI: true, wsPort: 3001, password: "secret" } // Enable WebSocket transport
+  [websocketTransport({ mode: "client", wsUrl: "wss://your-ui.com/logs" })],
+  { minLevel: "debug" }
 );
+logger.info("Remote log");
 ```
 
-## 🧪 Testing
+### Environment Variables
 
-```bash
-npm test
+```typescript
+const logger = DebugIt.fromEnv([consoleTransport]);
 ```
 
-## 🏗️ Building
+```typescript
+export DEBUG_IT_LEVEL=info
+export DEBUG_IT_MODE=true
+export DEBUG_IT_WS_PORT=3001
 
-```bash
-npm run build
 ```
 
-## 📄 License
+## API
+
+- **new DebugIt(transports, settings, debugOptions)**:
+  - `transports`: Array of transports.
+  - `settings`: `{ minLevel: 'debug' | 'info' | 'warn' | 'error', debugMode: boolean }`.
+  - `debugOptions`: `{ debugUI, wsMode, wsPort, wsUrl, password }`.
+- **Methods**: `debug()`, `info()`, `warn()`, `error()`, `addTransport()`, `close()`.
+- **Transports**: `consoleTransport`, `fileTransport({ filePath, maxSize })`, `websocketTransport({ mode, port, url, password })`.
+
+## License
 
 MIT
 
-## 👤 Author
-
 **OCB** ❤️
-
----
-
-_Built with TypeScript and optimized for performance_

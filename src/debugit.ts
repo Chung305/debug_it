@@ -2,6 +2,7 @@ import { LogEntry, DebugOptions, Transport, Settings } from "./utils/types";
 import { LEVELS } from "./utils/constants";
 import { getCallerInfo } from "./utils/util";
 import { websocketTransport } from "./transports";
+import { closeWebSocketServer } from "./transports/websocket";
 
 export class DebugIt {
   private transports: Transport[] = [];
@@ -40,6 +41,12 @@ export class DebugIt {
 
   addTransport(transport: Transport): void {
     this.transports.push(transport);
+  }
+
+  close(): void {
+    if (this.debugMode) {
+      closeWebSocketServer();
+    }
   }
 
   private log(level: LogEntry["LEVEL"], message?: string, meta?: any): void {
